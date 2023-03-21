@@ -20,9 +20,9 @@ import pl.maciejbadziak.appweather.weatherarchive.domain.WeatherArchive;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.time.LocalDate;
 
 import static java.lang.String.format;
-import static java.time.LocalDate.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.groups.Tuple.tuple;
@@ -45,7 +45,10 @@ class GetWeatherArchiveByLocationAdapterTest {
     private static final double LATITUDE = 13.13;
     private static final double LONGITUDE = -13.13;
     private static final String URI_PATH = "/v1/archive";
-    private static final String QUERY = "latitude=13.13&longitude=-13.13&start_date=2023-03-14&end_date=2023-03-20&hourly=precipitation&daily=sunrise,sunset&timezone=Europe/Berlin";
+    private static final LocalDate TODAY = LocalDate.now();
+    private static final LocalDate YESTERDAY = LocalDate.now().minusDays(1);
+    private static final LocalDate WEEK_AGO = LocalDate.now().minusDays(6);
+    private static final String QUERY = getQuery();
     private static final String SERIALIZATION_ERROR = "Cannot serialize JSON";
     private static final String CORRECT_REQUEST = "Correct request";
     private static final String ERROR_PROCESSED = "Error processed";
@@ -87,15 +90,15 @@ class GetWeatherArchiveByLocationAdapterTest {
                 DailyReport::getAvgPrecipitation
         ).containsExactly(
                 tuple(
-                        of(2023, 3, 20),
+                        TODAY,
                         result.getDailyReports().get(0).getSunrise(),
                         result.getDailyReports().get(0).getSunset(),
-                        result.getDailyReports().get(0).getAvgPrecipitation()),
+                        1.3),
                 tuple(
-                        of(2023, 3, 19),
+                        YESTERDAY,
                         result.getDailyReports().get(1).getSunrise(),
                         result.getDailyReports().get(1).getSunset(),
-                        result.getDailyReports().get(1).getAvgPrecipitation())
+                        1.1)
         );
     }
 
@@ -170,5 +173,13 @@ class GetWeatherArchiveByLocationAdapterTest {
         } catch (final JsonProcessingException e) {
             throw new AssertionFailedError(SERIALIZATION_ERROR);
         }
+    }
+
+    private static String getQuery() {
+        return "latitude=13.13&longitude=-13.13&start_date=" +
+                WEEK_AGO +
+                "&end_date=" +
+                TODAY +
+                "&hourly=precipitation&daily=sunrise,sunset&timezone=Europe/Berlin";
     }
 }
